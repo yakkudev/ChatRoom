@@ -4,7 +4,7 @@ public static class Program {
     public static void Main(string[] args) {
         
         if (args.Length == 0) {
-            _ = new ChatClientLocal("localhost", 21337);
+            _ = new LocalClient("localhost", 21337);
             return;
         }
 
@@ -20,7 +20,10 @@ public static class Program {
                 Console.WriteLine("error: host not specified");
                 return;
             }
-            _ = new ChatClientLocal(hostArg, port);
+            
+            var username = args.ElementAtOrDefault(3);
+            
+            _ = new LocalClient(hostArg, port, username);
             return;
         }
 
@@ -35,14 +38,14 @@ public static class Program {
                 return;
             }
 
-            _ = new ChatServer(port);
+            _ = new Server(port);
             return;
         }
         
         Console.WriteLine("ChatRoom - client/server chat room application");
         Console.WriteLine("usage:");
         Console.WriteLine("<no args> - start client");
-        Console.WriteLine("--client <port> <host> - start client with arguments");
+        Console.WriteLine("--client <port> <host> [username] - start client with arguments");
         Console.WriteLine("--server <port> - start server at port");
     }
 }
