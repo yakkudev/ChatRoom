@@ -60,11 +60,6 @@ jobs:
             -p:PublishTrimmed=false \
             -p:Version=$VERSION \
             -o publish
-            
-      - name: Rename output for consistency
-        run: |
-          mv publish/*${{ matrix.exe_name }} publish/${{ matrix.exe_name }}
-        shell: bash
 
       - name: Zip the build
         run: zip -r ${{ matrix.zip_name }} publish
