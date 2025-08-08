@@ -4,8 +4,8 @@ using System.Net.Sockets;
 namespace ChatRoom;
 
 public class LocalClient {
-    string username;
-    string session = "";
+    volatile string username;
+    volatile string session = "";
     string host;
     int port;
 
