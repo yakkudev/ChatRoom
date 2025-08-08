@@ -1,7 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
-using System.Text.RegularExpressions;
 
 namespace ChatRoom;
 
@@ -17,7 +15,7 @@ public class Server {
     }
 
     void Start() {
-        var listener = new TcpListener(IPAddress.Loopback, port);
+        var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
         Console.WriteLine($"ChatRoom server started on port {port}");
 

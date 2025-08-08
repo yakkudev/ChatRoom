@@ -11,29 +11,24 @@ public class LocalClient {
 
     TcpClient? tcpClient;
 
-    public LocalClient(string host, int port, string? username = null) {
-        this.host = host;
-        this.port = port;
-
-        this.username = username ?? UsernamePrompt();
+    public LocalClient(string? host, int port, string? username) {
+        this.host = host ?? UserPrompt("Specify hostname: ", "localhost");
+        this.username = username ?? UserPrompt("Your username: ", "anon");
         
+        this.port = port;
         Connect();
     }
 
-    string UsernamePrompt() {
-        Console.Write("Username: ");
-        var name = Console.ReadLine() ?? "anon";
-        return name;
+    static string UserPrompt(string prompt = "", string defaultVal = "") {
+        Console.Write(prompt);
+        var name = Console.ReadLine()!;
+        return string.IsNullOrWhiteSpace(name) ? defaultVal : name;
     }
 
     bool TryConnect() {
         try {
             tcpClient = new TcpClient(host, port);
-        }
-        catch (Exception){
-            return false;
-        }
-
+        } catch (Exception){ return false; }
         return true;
     }
 
