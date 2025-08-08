@@ -33,14 +33,14 @@ public class LocalClient {
     }
 
     void Connect() {
-        Console.WriteLine($"connecting to {host}, port {port}");
+        Console.WriteLine($"Connecting to {host}, port {port}");
         var retries = 10;
         while (!TryConnect()) {
             if (--retries < 0) {
-                Console.WriteLine($"error: could not establish connection");
+                Console.WriteLine($"Error establishing connection");
                 return;
             }
-            Console.WriteLine($"retrying connection...");
+            Console.WriteLine($"Retrying connection...");
             Thread.Sleep(1000);
         }
 
@@ -57,23 +57,25 @@ public class LocalClient {
                     case PacketType.Ok:
                         break;
                     case PacketType.Fail:
-                        Console.WriteLine($"server rejected request");
+                        Console.WriteLine($"[!] Host rejected request");
                         break;
                     case PacketType.AssignSession:
-                        Console.WriteLine($"received session token!");
+                        Console.WriteLine($"Received session token!");
                         session = reader.ReadString();
                         break;
                     case PacketType.Rename:
                         username = reader.ReadString();
-                        Console.WriteLine($"Your username was set to <{username}>");
+                        Console.WriteLine($"[#] Your username was set to <{username}>");
                         break;
                     case PacketType.ChatMessage:
                         var senderName = reader.ReadString();
                         var message = reader.ReadString();
+                        Console.SetCursorPosition(0, Console.CursorTop);
                         Console.WriteLine($"<{senderName}> {message}");
+                        Console.Write("> ");
                         break;
                     default:
-                        Console.WriteLine($"bad packet (#{packetType})");
+                        Console.WriteLine($"[!] Bad packet (#{packetType})");
                         break;
                 }
             }
@@ -85,14 +87,23 @@ public class LocalClient {
         
         // block until session token received
         while (session.Length == 0) {}
-        Console.WriteLine("###### CONNECTED ######");
+        Console.WriteLine("-=-=- CONNECTED -=-=-");
+        Console.Write("> ");
         
         // user input
         string? input;
-        while ((input = Console.ReadLine()) != null) {
-            int currentPos = Console.CursorTop;
+        while ((input = Console.ReadLine()) != null ) {
+            if (string.IsNullOrWhiteSpace(input)) {
+                Console.SetCursorPosition(0, Console.CursorTop - 1);
+                Console.Write("> ");
+                continue;
+            }
+            
+            input = EmojiProcessor.Emojify(input);
+            
+            var currentPos = Console.CursorTop;
             Console.SetCursorPosition(0, Console.CursorTop - 1);
-            Console.WriteLine($"#> {input}");
+            Console.WriteLine($"[{username}] {input}");
             Console.SetCursorPosition(0, currentPos);
             Console.Out.Flush();
             

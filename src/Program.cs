@@ -57,8 +57,9 @@ public static class Program {
         Console.WriteLine("    --help                      Show help");
         Console.WriteLine("");
         Console.WriteLine("Examples:");
-        Console.WriteLine("    chatroom --user Alice");
-        Console.WriteLine("    chatroom --client 10.0.0.5 21337 --user Sk8brd");
+        Console.WriteLine("    ChatRoom --user Alice");
+        Console.WriteLine("    ChatRoom --client 10.0.0.5 21337 --user Sk8brd");
+        Console.WriteLine("    ChatRoom --server 73312");
     }
 
     static ProgramOptions ParseArgs(string[] args) {
