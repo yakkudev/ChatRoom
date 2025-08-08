@@ -43,7 +43,7 @@ jobs:
             -p:PublishSingleFile=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:PublishTrimmed=false \
-            -p:Version=${{ github.ref_name.startsWith('v') && github.ref_name.slice(1) || github.ref_name }} \
+            -p:Version=${{ github.ref_name && replace(github.ref_name, 'v', '') }}
             -o publish
 
       - name: Rename output for consistency
