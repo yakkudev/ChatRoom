@@ -4,9 +4,14 @@ on:
   push:
     tags:
       - 'v*'
-
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 0.0.1)'
+        required: true
+        default: '0.0.0-test'
+          
 jobs:
-
   build:
     name: Build for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -40,8 +45,14 @@ jobs:
       - name: Publish
         shell: bash
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+      
           echo "Building version $VERSION for runtime ${{ matrix.rid }}"
+      
           dotnet publish -c Release -r ${{ matrix.rid }} \
             --self-contained true \
             -p:PublishSingleFile=true \
