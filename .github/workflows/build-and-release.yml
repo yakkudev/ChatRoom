@@ -61,9 +61,15 @@ jobs:
             -p:Version=$VERSION \
             -o publish
 
-      - name: Zip the build
+      - name: Zip build (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: zip -r ${{ matrix.zip_name }} publish
         shell: bash
+
+      - name: Zip build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: Compress-Archive -Path publish\* -DestinationPath ${{ matrix.zip_name }}
+        shell: powershell
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
