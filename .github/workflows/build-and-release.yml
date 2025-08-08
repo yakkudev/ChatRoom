@@ -4,7 +4,13 @@ on:
   push:
     tags:
       - 'v*'
-
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g. 0.0.1)'
+        required: true
+        default: '0.0.0-test'
+          
 jobs:
   build:
     name: Build for ${{ matrix.os }}
@@ -37,23 +43,33 @@ jobs:
         run: dotnet restore
 
       - name: Publish
+        shell: bash
         run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+      
+          echo "Building version $VERSION for runtime ${{ matrix.rid }}"
+      
           dotnet publish -c Release -r ${{ matrix.rid }} \
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:PublishTrimmed=false \
-            -p:Version=${{ github.ref_name }} \
+            -p:Version=$VERSION \
             -o publish
 
-      - name: Rename output for consistency
-        run: |
-          mv publish/*${{ matrix.exe_name }} publish/${{ matrix.exe_name }}
-        shell: bash
-
-      - name: Zip the build
+      - name: Zip build (Linux)
+        if: matrix.os == 'ubuntu-latest'
         run: zip -r ${{ matrix.zip_name }} publish
         shell: bash
+
+      - name: Zip build (Windows)
+        if: matrix.os == 'windows-latest'
+        run: Compress-Archive -Path publish\* -DestinationPath ${{ matrix.zip_name }}
+        shell: powershell
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
