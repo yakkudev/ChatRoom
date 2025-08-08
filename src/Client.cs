@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ChatRoom;
@@ -17,8 +18,8 @@ public class Client {
         Session = RandomNumberGenerator.GetHexString(64);
         
         var stream = TcpClient.GetStream();
-        Reader = new BinaryReader(stream);
-        Writer = new BinaryWriter(stream);
+        Reader = new BinaryReader(stream, new UTF8Encoding(false));
+        Writer = new BinaryWriter(stream, new UTF8Encoding(false));
     }
 
     public static string GenerateUsername() {

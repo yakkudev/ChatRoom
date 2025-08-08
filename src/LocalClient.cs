@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Net.Sockets;
+using System.Text;
 
 namespace ChatRoom;
 
@@ -8,7 +9,6 @@ public class LocalClient {
     volatile string session = "";
     string host;
     int port;
-
     TcpClient? tcpClient;
 
     public LocalClient(string? host, int port, string? username) {
@@ -47,8 +47,8 @@ public class LocalClient {
         Debug.Assert(tcpClient != null, nameof(tcpClient) + " != null");
 
         using var stream = tcpClient.GetStream();
-        using var reader = new BinaryReader(stream);
-        using var writer = new BinaryWriter(stream);
+        using var reader = new BinaryReader(stream, new UTF8Encoding(false));
+        using var writer = new BinaryWriter(stream, new UTF8Encoding(false));
         
         var receiveThread = new Thread(() => {
             byte? packetType;
