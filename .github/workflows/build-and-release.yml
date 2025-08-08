@@ -6,6 +6,7 @@ on:
       - 'v*'
 
 jobs:
+
   build:
     name: Build for ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -37,15 +38,18 @@ jobs:
         run: dotnet restore
 
       - name: Publish
+        shell: bash
         run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "Building version $VERSION for runtime ${{ matrix.rid }}"
           dotnet publish -c Release -r ${{ matrix.rid }} \
             --self-contained true \
             -p:PublishSingleFile=true \
             -p:IncludeNativeLibrariesForSelfExtract=true \
             -p:PublishTrimmed=false \
-            -p:Version=${{ github.ref_name && replace(github.ref_name, 'v', '') }}
+            -p:Version=$VERSION \
             -o publish
-
+            
       - name: Rename output for consistency
         run: |
           mv publish/*${{ matrix.exe_name }} publish/${{ matrix.exe_name }}
