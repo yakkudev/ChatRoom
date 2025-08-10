@@ -1,14 +1,9 @@
 namespace ChatRoom.Packets;
 
 public class ChatMessagePacket(string senderName, string message) : Packet {
-    string Message { get; } = message;
-    string SenderName { get; } = senderName;
+    public string SenderName { get; set; } = senderName;
+    public string Message { get; set; } = message;
 
-    public override PacketType Type => PacketType.ChatMessage;
-
-    public override void WriteTo(BinaryWriter binaryWriter) {
-        base.WriteTo(binaryWriter);
-        binaryWriter.Write(SenderName);
-        binaryWriter.Write(Message);
-    }
+    protected override PacketType Type => PacketType.ChatMessage;
+    public ChatMessagePacket() : this("", "") { }
 }

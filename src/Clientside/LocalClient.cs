@@ -1,8 +1,9 @@
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
+using ChatRoom.Packets;
 
-namespace ChatRoom;
+namespace ChatRoom.Clientside;
 
 public class LocalClient {
     volatile string username;
@@ -61,19 +62,19 @@ public class LocalClient {
                         break;
                     case PacketType.AssignSession:
                         Console.WriteLine($"Received session token!");
-                        session = reader.ReadString();
+                        session = Packet.ReadFrom<AssignSessionPacket>(reader).Session;
                         break;
                     case PacketType.Rename:
-                        username = reader.ReadString();
+                        username = Packet.ReadFrom<RenamePacket>(reader).Name;
                         Console.WriteLine($"[#] Your username was set to <{username}>");
                         break;
-                    case PacketType.ChatMessage:
-                        var senderName = reader.ReadString();
-                        var message = reader.ReadString();
+                    case PacketType.ChatMessage: {
+                        var p = Packet.ReadFrom<ChatMessagePacket>(reader);
                         Console.SetCursorPosition(0, Console.CursorTop);
-                        Console.WriteLine($"<{senderName}> {message}");
+                        Console.WriteLine($"<{p.SenderName}> {p.Message}");
                         Console.Write("> ");
                         break;
+                    }
                     default:
                         Console.WriteLine($"[!] Bad packet (#{packetType})");
                         break;
@@ -83,7 +84,7 @@ public class LocalClient {
         receiveThread.Start();
 
         // send connection packet to server
-        new Packets.SendConnectPacket(username).WriteTo(writer);
+        new SendConnectPacket(username, Program.Version).WriteTo(writer);
         
         // block until session token received
         while (session.Length == 0) {}
@@ -107,7 +108,7 @@ public class LocalClient {
             Console.SetCursorPosition(0, currentPos);
             Console.Out.Flush();
             
-            new Packets.SendChatMessagePacket(session, input).WriteTo(writer);
+            new SendChatMessagePacket(session, input).WriteTo(writer);
             Console.Write("> ");
         } 
     }

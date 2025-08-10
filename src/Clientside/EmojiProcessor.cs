@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace ChatRoom;
+namespace ChatRoom.Clientside;
 
 public class EmojiProcessor {
     static readonly Dictionary<string, string> EmojiMap = new() {

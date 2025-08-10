@@ -1,12 +1,10 @@
 namespace ChatRoom.Packets;
 
-public class SendConnectPacket(string name) : Packet {
-    string Name { get; } = name;
+public class SendConnectPacket(string username, string version) : Packet {
+    public string Username { get; set; } = username;
+    public string Version { get; set; }= version;
 
-    public override PacketType Type => PacketType.SendConnect;
+    protected override PacketType Type => PacketType.SendConnect;
 
-    public override void WriteTo(BinaryWriter binaryWriter) {
-        base.WriteTo(binaryWriter);
-        binaryWriter.Write(Name);
-    }
+    public SendConnectPacket() : this("", "") { }
 }

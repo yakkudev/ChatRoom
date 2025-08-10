@@ -15,7 +15,7 @@ public class Client {
     public Client(TcpClient tcpClient, string name) {
         TcpClient = tcpClient;
         Name = name;
-        Session = RandomNumberGenerator.GetHexString(64);
+        Session = RandomNumberGenerator.GetHexString(16);
         
         var stream = TcpClient.GetStream();
         Reader = new BinaryReader(stream, new UTF8Encoding(false));

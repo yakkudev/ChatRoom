@@ -12,16 +12,11 @@ public static class Program {
         int Port
     );
 
+    public static string Version { get; private set; } = "";
+
     public static void Main(string[] args) {
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
-        Console.InputEncoding = System.Text.Encoding.UTF8;
-        
-        var version = Assembly.GetExecutingAssembly()
-            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-            ?.InformationalVersion ?? "unknown"; 
-        
-        Console.WriteLine($"ChatRoom version {version}");
-        
+        Setup();
+
         ProgramOptions options;
         try {
             options = ParseArgs(args);
@@ -41,7 +36,7 @@ public static class Program {
         }
 
         if (options.DoStartClient) {
-            _ = new LocalClient(options.Host, options.Port, options.Username);
+            _ = new Clientside.LocalClient(options.Host, options.Port, options.Username);
             return;
         }
 
@@ -49,6 +44,17 @@ public static class Program {
             _ = new Server(options.Port);
             return;
         }
+    }
+
+    static void Setup() {
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        Console.InputEncoding = System.Text.Encoding.UTF8;
+        
+        Version = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "unknown"; 
+        
+        Console.WriteLine($"ChatRoom version {Version}");
     }
 
     static void ShowHelp() {

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Sockets;
+using ChatRoom.Packets;
 
 namespace ChatRoom;
 
@@ -58,35 +59,39 @@ public class Server {
             byte? packetType;
             while ((packetType= client.Reader.ReadByte()) != null) {
                 switch ((PacketType)packetType) {
-                    case PacketType.SendConnect:
-                        var requestedName = client.Reader.ReadString();
-                        var newName = Client.SanitizeUsername(requestedName) ?? Client.GenerateUsername();
+                    case PacketType.SendConnect: {
+                        var p = Packet.ReadFrom<SendConnectPacket>(client.Reader);
+                        var newName = Client.SanitizeUsername(p.Username) ?? Client.GenerateUsername();
 
                         // check if already exists
                         if (GetClientByName(newName) != null) {
                             Console.WriteLine($"renaming <{client.Name}> to <{newName}> failed! (already exists)");
-                            client.SendPacket(new Packets.FailPacket());
-                            client.SendPacket(new Packets.RenamePacket(client.Name));
+                            client.SendPacket(new FailPacket());
+                            client.SendPacket(new RenamePacket(client.Name));
                             break;
                         }
-                        
+
                         Console.WriteLine($"renaming <{client.Name}> to <{newName}>");
-                        client.SendPacket(new Packets.RenamePacket(newName));
+                        client.SendPacket(new RenamePacket(newName));
                         client.Name = newName;
                         break;
-                    case PacketType.SendChatMessage:
-                        var session = client.Reader.ReadString();
-                        if (client.Session != session) {
-                            client.SendPacket(new Packets.FailPacket());
+                    }
+                    case PacketType.SendChatMessage: {
+                        var p = Packet.ReadFrom<SendChatMessagePacket>(client.Reader);
+                        
+                        if (client.Session != p.Session) {
+                            client.SendPacket(new FailPacket());
+                            Console.WriteLine($"bad session: <{client.Session}, {p.Session}>");
                             break;
                         }
-                        var message = client.Reader.ReadString();
-                        Console.WriteLine($"message: <{client.Name}> {message}");
-                        BroadcastPacket(client, new Packets.ChatMessagePacket(client.Name, message));
+                        // todo: sanitize message
+                        Console.WriteLine($"message: <{client.Name}> {p.Message}");
+                        BroadcastPacket(client, new ChatMessagePacket(client.Name, p.Message));
                         break;
+                    }
                     default:
                         Console.WriteLine($"WARN: received bad packet (#{(int)packetType}) from {client.Name}");
-                        client.SendPacket(new Packets.FailPacket());
+                        client.SendPacket(new FailPacket());
                         break;
                 }
             }
