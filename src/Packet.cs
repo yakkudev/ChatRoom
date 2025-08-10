@@ -10,7 +10,6 @@ public enum PacketType : byte {
     Rename,
     SendChatMessage,
     ChatMessage,
-    Display, // display stuff requested by server
     SendCommand // send cmd to server
 }
 

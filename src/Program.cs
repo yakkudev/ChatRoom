@@ -3,45 +3,56 @@
 namespace ChatRoom;
 
 public static class Program {
-    record struct ProgramOptions(
+    public record struct ProgramOptions(
         bool DoShowHelp,
         bool DoStartServer,
         bool DoStartClient,
         string? Username,
         string? Host,
-        int Port
+        int Port,
+        List<string> PrivilegedUsers,
+        bool PrivilegeOnlyLocal
     );
 
     public static string Version { get; private set; } = "";
+    public static ProgramOptions Options { get; private set; } = new ProgramOptions(
+        DoShowHelp: false,
+        DoStartServer: false,
+        DoStartClient: true,
+        Username: null,
+        Host: null,
+        Port: 21337,
+        PrivilegedUsers: [],
+        PrivilegeOnlyLocal: false
+    );
 
     public static void Main(string[] args) {
         Setup();
 
-        ProgramOptions options;
         try {
-            options = ParseArgs(args);
+            ParseArgs(args);
         } catch (Exception e) {
             Console.WriteLine($"argument error: {e.Message}");
             return;
         }
         
-        if (options.DoStartClient && options.DoStartServer) {
+        if (Options.DoStartClient && Options.DoStartServer) {
             Console.WriteLine("Cannot specify both --client and --server");
             return;
         }
 
-        if (options.DoShowHelp) {
+        if (Options.DoShowHelp) {
             ShowHelp();
             return;
         }
 
-        if (options.DoStartClient) {
-            _ = new Clientside.LocalClient(options.Host, options.Port, options.Username);
+        if (Options.DoStartClient) {
+            _ = new Clientside.LocalClient(Options.Host, Options.Port, Options.Username);
             return;
         }
 
-        if (options.DoStartServer) {
-            _ = new Server(options.Port);
+        if (Options.DoStartServer) {
+            _ = new Server(Options.Port);
             return;
         }
     }
@@ -63,6 +74,8 @@ public static class Program {
         Console.WriteLine("    --client [host] [port]      Start client with optional host and port");
         Console.WriteLine("    --server <port>             Start server on port");
         Console.WriteLine("    --user <username>           Set username for client");
+        Console.WriteLine("    --privilege <usernames>     Set privileged users (server only)");
+        Console.WriteLine("    --privilege-only-local      Give privilege only to local users. Specify users using the --privilege flag (server only)");
         Console.WriteLine("    --help                      Show help");
         Console.WriteLine("");
         Console.WriteLine("Examples:");
@@ -71,15 +84,8 @@ public static class Program {
         Console.WriteLine("    ChatRoom --server 73312");
     }
 
-    static ProgramOptions ParseArgs(string[] args) {
-        var options = new ProgramOptions(
-            DoShowHelp: false,
-            DoStartServer: false,
-            DoStartClient: true,
-            Username: null,
-            Host: null,
-            Port: 21337
-        );
+    static void ParseArgs(string[] args) {
+        var options = Options;
         
         var argQueue = new Queue<string>(args); 
         while (argQueue.Count > 0) {
@@ -94,7 +100,17 @@ public static class Program {
                     if (argQueue.Count == 0) throw new ArgumentException("--user requires a username");
                     options.Username = argQueue.Dequeue();
                     break;
-
+                
+                case "--privilege":
+                    if (argQueue.Count == 0) throw new ArgumentException("--privilege requires at least one username");
+                    var privilegedUsers = new List<string>();
+                    while (argQueue.Count > 0 && !argQueue.Peek().StartsWith("--")) {
+                        privilegedUsers.Add(argQueue.Dequeue());
+                    }
+                    options.PrivilegedUsers.AddRange(privilegedUsers);
+                    break;
+                case "--privilege-only-local":
+                    break;
                 case "--client":
                     if (argQueue.Count >= 1) {
                         options.Host = argQueue.Dequeue();
@@ -116,8 +132,8 @@ public static class Program {
                 default:
                     throw new ArgumentException($"unknown argument: {arg}");
             }
-        } 
-        
-        return options;
+        }
+
+        Options = options;
     }
 }

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -11,7 +12,11 @@ public class Client {
     public readonly BinaryWriter Writer;
     public readonly BinaryReader Reader;
     public readonly TcpClient TcpClient;
+    public bool Announced = false;
+    public bool Privileged = false;
 
+    public bool IsLocal => TcpClient.Client.LocalEndPoint is IPEndPoint localEndPoint &&
+                           localEndPoint.Address.Equals(IPAddress.Loopback);
     public Client(TcpClient tcpClient, string name) {
         TcpClient = tcpClient;
         Name = name;

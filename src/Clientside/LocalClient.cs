@@ -52,33 +52,12 @@ public class LocalClient {
         using var writer = new BinaryWriter(stream, new UTF8Encoding(false));
         
         var receiveThread = new Thread(() => {
-            byte? packetType;
-            while ((packetType = reader.ReadByte()) != null) {
-                switch ((PacketType)packetType) {
-                    case PacketType.Ok:
-                        break;
-                    case PacketType.Fail:
-                        Console.WriteLine($"[!] Host rejected request");
-                        break;
-                    case PacketType.AssignSession:
-                        Console.WriteLine($"Received session token!");
-                        session = Packet.ReadFrom<AssignSessionPacket>(reader).Session;
-                        break;
-                    case PacketType.Rename:
-                        username = Packet.ReadFrom<RenamePacket>(reader).Name;
-                        Console.WriteLine($"[#] Your username was set to <{username}>");
-                        break;
-                    case PacketType.ChatMessage: {
-                        var p = Packet.ReadFrom<ChatMessagePacket>(reader);
-                        Console.SetCursorPosition(0, Console.CursorTop);
-                        Console.WriteLine($"<{p.SenderName}> {p.Message}");
-                        Console.Write("> ");
-                        break;
-                    }
-                    default:
-                        Console.WriteLine($"[!] Bad packet (#{packetType})");
-                        break;
-                }
+            try { HandleNetwork(reader); }
+            catch (Exception) {}
+            finally {
+                Console.WriteLine($"Connection closed.");
+                tcpClient?.Close();
+                Environment.Exit(0);
             }
         });
         receiveThread.Start();
@@ -88,8 +67,6 @@ public class LocalClient {
         
         // block until session token received
         while (session.Length == 0) {}
-        Console.WriteLine("-=-=- CONNECTED -=-=-");
-        Console.Write("> ");
         
         // user input
         string? input;
@@ -99,21 +76,125 @@ public class LocalClient {
                 Console.Write("> ");
                 continue;
             }
+            
+            if (input.StartsWith('/')) {
+                if (ExecuteCommand(input, writer, reader)) return;
+                continue;
+            }
 
-            var sourceLength = input.Length;
-            var message = EmojiProcessor.Emojify(input);
-            // pad message to source length
-            message = message.PadRight(sourceLength, ' ');
-            
-            // write message to console
-            var currentPos = Console.CursorTop;
-            Console.SetCursorPosition(0, Console.CursorTop - 1);
-            Console.WriteLine($"[{username}] {message}");
-            Console.SetCursorPosition(0, currentPos);
-            Console.Out.Flush();
-            
-            new SendChatMessagePacket(session, message).WriteTo(writer);
-            Console.Write("> ");
+            SendChatMessage(input, writer);
         } 
+    }
+
+    void SendChatMessage(string input, BinaryWriter writer) {
+        var sourceLength = input.Length;
+        var message = EmojiProcessor.Emojify(input);
+        // pad message to source length
+        message = message.PadRight(sourceLength, ' ');
+            
+        // write message to console
+        var currentPos = Console.CursorTop;
+        Console.SetCursorPosition(0, Console.CursorTop - 1);
+        Console.WriteLine($"[{username}] {message}");
+        Console.SetCursorPosition(0, currentPos);
+        Console.Out.Flush();
+       
+        new SendChatMessagePacket(session, message).WriteTo(writer);
+        Console.Write("> ");
+    }
+
+    bool ExecuteCommand(string input, BinaryWriter writer, BinaryReader reader) {
+        var cmd = input[1..].Trim();
+                
+        // local commands
+        if (cmd.StartsWith("quit") || cmd.StartsWith("exit")) {
+            Console.WriteLine($"[!] Disconnecting...");
+            tcpClient.Close();
+            return true;
+        }
+        
+        if (cmd.StartsWith("clear")) {
+            Console.Clear();
+            Console.Write("> ");
+            return false;
+        }
+                
+        // send command to server
+        new SendCommandPacket(session, cmd).WriteTo(writer);
+        Console.WriteLine();
+        Console.Write("> ");
+        return false;
+    }
+
+    void HandleNetwork(BinaryReader reader) {
+        byte? packetType;
+        while (tcpClient != null && tcpClient.Connected && (packetType = reader.ReadByte()) != null) {
+            Console.SetCursorPosition(0, Console.CursorTop);
+            switch ((PacketType)packetType) {
+                case PacketType.Ok:
+                    break;
+                case PacketType.Fail:
+                    var reason = Packet.ReadFrom<FailPacket>(reader).Reason;
+                    if (reason.Length != 0)
+                        reason = $"{reason}";
+                    else
+                        reason = "server rejected request";
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"[!] {reason}");
+                    Console.ResetColor();
+                    break;
+                case PacketType.AssignSession:
+                    Console.WriteLine($"Received session token!");
+                    session = Packet.ReadFrom<AssignSessionPacket>(reader).Session;
+                    break;
+                case PacketType.Rename:
+                    username = Packet.ReadFrom<RenamePacket>(reader).Name;
+                    Console.WriteLine($"[#] Your username was set to <{username}>");
+                    break;
+                case PacketType.ChatMessage: {
+                    var p = Packet.ReadFrom<ChatMessagePacket>(reader);
+                    PrintMessage(p);
+                    break;
+                }
+                default:
+                    Console.WriteLine($"[!] Bad packet (#{packetType})");
+                    break;
+            }
+
+            Console.Write("\n> ");
+            Console.Out.Flush();
+        }
+    }
+
+    void PrintMessage(ChatMessagePacket p) {
+        Console.SetCursorPosition(0, Console.CursorTop);
+        
+        // server message
+        if (p.SenderName == "$") {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write(p.Message);
+            Console.ResetColor();
+            return;
+        }
+        
+        // user message
+        Console.Write($"<{p.SenderName}> ");
+        
+        // scan for @mentions, if found, highlight part of the message
+        var mention = $"@{username}";
+        if (p.Message.Contains(mention)) {
+            var idx = p.Message.IndexOf(mention);
+            if (idx >= 0) {
+                Console.Write(p.Message[..idx]);
+            }
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.Write(mention);
+            Console.ResetColor();
+            Console.Write(p.Message[(idx + mention.Length)..]);
+        } else {
+            // no @mention, just print the message
+            Console.Write(p.Message);
+        }
+        Console.ResetColor();
     }
 }
