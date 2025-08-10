@@ -99,16 +99,20 @@ public class LocalClient {
                 Console.Write("> ");
                 continue;
             }
+
+            var sourceLength = input.Length;
+            var message = EmojiProcessor.Emojify(input);
+            // pad message to source length
+            message = message.PadRight(sourceLength, ' ');
             
-            input = EmojiProcessor.Emojify(input);
-            
+            // write message to console
             var currentPos = Console.CursorTop;
             Console.SetCursorPosition(0, Console.CursorTop - 1);
-            Console.WriteLine($"[{username}] {input}");
+            Console.WriteLine($"[{username}] {message}");
             Console.SetCursorPosition(0, currentPos);
             Console.Out.Flush();
             
-            new SendChatMessagePacket(session, input).WriteTo(writer);
+            new SendChatMessagePacket(session, message).WriteTo(writer);
             Console.Write("> ");
         } 
     }
