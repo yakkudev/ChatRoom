@@ -12,11 +12,12 @@ public static class Program {
         string? Host,
         int Port,
         List<string> PrivilegedUsers,
-        bool PrivilegeOnlyLocal
+        bool PrivilegeOnlyLocal,
+        bool StrictVersion
     );
 
     public static string Version { get; private set; } = "";
-    public static ProgramOptions Options { get; private set; } = new ProgramOptions(
+    public static ProgramOptions Options { get; private set; } = new(
         DoShowHelp: false,
         DoStartServer: false,
         DoStartClient: true,
@@ -24,7 +25,8 @@ public static class Program {
         Host: null,
         Port: 21337,
         PrivilegedUsers: [],
-        PrivilegeOnlyLocal: false
+        PrivilegeOnlyLocal: false,
+        StrictVersion: false
     );
 
     public static void Main(string[] args) {
@@ -91,6 +93,7 @@ public static class Program {
         Console.WriteLine("    --user <username>           Set username for client");
         Console.WriteLine("    --privilege <usernames>     Set privileged users (server only)");
         Console.WriteLine("    --privilege-only-local      Give privilege only to local users. Specify users using the --privilege flag (server only)");
+        Console.WriteLine("    --strict-version            Require strict version match for communication (server only)");
         Console.WriteLine("    --help                      Show help");
         Console.WriteLine("");
         Console.WriteLine("Examples:");
@@ -124,9 +127,15 @@ public static class Program {
                     }
                     options.PrivilegedUsers.AddRange(privilegedUsers);
                     break;
+                
                 case "--privilege-only-local":
                     options.PrivilegeOnlyLocal = true;
                     break;
+                
+                case "--strict-version":
+                    options.StrictVersion = true;
+                    break;
+                
                 case "--client":
                     if (argQueue.Count >= 1) {
                         options.Host = argQueue.Dequeue();

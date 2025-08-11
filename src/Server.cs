@@ -132,6 +132,13 @@ public partial class Server {
 
 
     bool HandleSendConnect(Client client, SendConnectPacket packet) {
+        if (Program.Options.StrictVersion && packet.Version != Program.Version ) {
+            Console.WriteLine($"WARN: client <{client.Name}> tried to connect with wrong version: {packet.Version} (expected {Program.Version})");
+            client.SendPacket(new FailPacket("wrong version"));
+            DropClient(client);
+            return false;
+        }
+        
         var newName = Client.SanitizeUsername(packet.Username) ?? Client.GenerateUsername();
 
         // check if client with this name already exists
