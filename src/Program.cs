@@ -110,6 +110,7 @@ public static class Program {
                     options.PrivilegedUsers.AddRange(privilegedUsers);
                     break;
                 case "--privilege-only-local":
+                    options.PrivilegeOnlyLocal = true;
                     break;
                 case "--client":
                     if (argQueue.Count >= 1) {
