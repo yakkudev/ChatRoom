@@ -170,13 +170,13 @@ public partial class Server {
         
         // todo: sanitize message
         Console.WriteLine($"message: <{client.Name}> {packet.Message}");
-        BroadcastPacket(new ChatMessagePacket(client.Name, packet.Message), client);
+        BroadcastPacket(new ChatMessagePacket(client.Name, packet.Message));
         return true;
     }
 
-    void BroadcastPacket(Packet packet, Client? origin = null) {
+    void BroadcastPacket(Packet packet, Client? skip = null) {
         lock (threadLock) {
-            foreach (var client in clients.Where(client => client != origin)) {
+            foreach (var client in clients.Where(client => client != skip)) {
                 client.SendPacket(packet);
             }
         }

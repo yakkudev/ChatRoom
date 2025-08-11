@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using ChatRoom.Clientside;
 
 namespace ChatRoom;
 
@@ -47,7 +48,15 @@ public static class Program {
         }
 
         if (Options.DoStartClient) {
-            _ = new Clientside.LocalClient(Options.Host, Options.Port, Options.Username);
+            if (string.IsNullOrWhiteSpace(Options.Username)) {
+                Options = Options with { Username = UserPrompt("Your username: ", "anon") };
+            }
+            if (string.IsNullOrWhiteSpace(Options.Host)) {
+                Options = Options with { Host = UserPrompt("Specify hostname: ", "localhost") };
+            }
+            var client = new ClientTUI(Options.Host, Options.Port, Options.Username);
+            client.Run();
+            
             return;
         }
 
@@ -55,6 +64,12 @@ public static class Program {
             _ = new Server(Options.Port);
             return;
         }
+    }
+    
+    static string UserPrompt(string prompt = "", string defaultVal = "") {
+        Console.Write(prompt);
+        var name = Console.ReadLine()!;
+        return string.IsNullOrWhiteSpace(name) ? defaultVal : name;
     }
 
     static void Setup() {

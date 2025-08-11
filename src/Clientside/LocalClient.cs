@@ -13,18 +13,13 @@ public class LocalClient {
     TcpClient? tcpClient;
 
     public LocalClient(string? host, int port, string? username) {
-        this.host = host ?? UserPrompt("Specify hostname: ", "localhost");
-        this.username = username ?? UserPrompt("Your username: ", "anon");
+        this.host = host;
+        this.username = username;
         
         this.port = port;
         Connect();
     }
 
-    static string UserPrompt(string prompt = "", string defaultVal = "") {
-        Console.Write(prompt);
-        var name = Console.ReadLine()!;
-        return string.IsNullOrWhiteSpace(name) ? defaultVal : name;
-    }
 
     bool TryConnect() {
         try {
