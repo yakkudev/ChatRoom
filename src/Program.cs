@@ -90,7 +90,7 @@ public static class Program {
         Console.WriteLine("Usage:");
         Console.WriteLine("    --client [host] [port]      Start client with optional host and port");
         Console.WriteLine("    --server <port>             Start server on port");
-        Console.WriteLine("    --user <username>           Set username for client");
+        Console.WriteLine("    --user <username>           Set username (client only)");
         Console.WriteLine("    --privilege <usernames>     Set privileged users (server only)");
         Console.WriteLine("    --privilege-only-local      Give privilege only to local users. Specify users using the --privilege flag (server only)");
         Console.WriteLine("    --strict-version            Require strict version match for communication (server only)");
