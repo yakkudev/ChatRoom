@@ -151,7 +151,8 @@ public class ClientTUI {
     
     void InputLoop() {
         const string prompt = "> ";
-        string? input = "";
+        var input = new TextField(Terminal.Width - 2);
+        
         var (lastWidth, lastHeight) = (Terminal.Width, Terminal.Height);
         while (!exitRequested) {
             // terminal resize
@@ -160,7 +161,6 @@ public class ClientTUI {
                 lastWidth = Terminal.Width;
                 lastHeight = Terminal.Height;
                 PrintWindow();
-                newMessages = true;
                 // have to split messages again if terminal width changed
                 if (widthChanged) {
                     formattedHistory.Clear();
@@ -168,54 +168,69 @@ public class ClientTUI {
                         NewMessageFormat(message);
                     }
                 }
+                newMessages = true;
+                input.MaxLength = Terminal.Width - 2;
+                RedrawInputField(prompt, input);
             }
             
             if (newMessages) {
                 RedrawMessages();
                 newMessages = false;
-                Terminal.CursorTo(prompt.Length + 1 + input.Length, Terminal.Height - 1);
+                Terminal.CursorTo(prompt.Length + input.CursorPosition + 1, Terminal.Height - 1);
                 Terminal.Flush();
             }
             
             if (Console.KeyAvailable) {
                 Terminal.CursorTo(0, Terminal.Height - 1);
                 var key = Console.ReadKey(true);
-                input = Input(key, input);
-                Terminal.ClearLine();
-                Terminal.Write(prompt, input);
-                Terminal.Flush();
+                ConsoleKeyInput(key, input);
+                RedrawInputField(prompt, input);
             }
             
             Thread.Sleep(10);
         }
     }
 
-    string Input(ConsoleKeyInfo key, string input) {
+    static void RedrawInputField(string prompt, TextField input) {
+        Terminal.CursorTo(0, Terminal.Height - 1);
+        Terminal.ClearLine();
+        Terminal.Write(prompt, input.ToString());
+        Terminal.CursorTo(prompt.Length + input.CursorPosition + 1, Terminal.Height - 1);
+        Terminal.Flush();
+    }
+
+    void ConsoleKeyInput(ConsoleKeyInfo key, TextField input) {
         switch (key.Key) {
             case ConsoleKey.Enter: {
-                HandleChatInput(input);
-                input = "";
+                HandleChatInput(input.ToString());
+                input.Clear();
                 break;
             }
             case ConsoleKey.Backspace: {
-                if (input.Length > 0) {
-                    input = input[..^1]; // remove last character
-                }
-
+                input.DeleteBack();
+                break;
+            }
+            case ConsoleKey.Delete: {
+                input.DeleteForward();
+                break;
+            }
+            case ConsoleKey.LeftArrow: {
+                input.MoveCursor(-1);
+                break;
+            }
+            case ConsoleKey.RightArrow: {
+                input.MoveCursor(1);
                 break;
             }
             default: {
                 if (key.KeyChar != 0) {
-                    if (char.IsControl(key.KeyChar)) return input; // ignore control characters
-                    if (input.Length >= Terminal.Width - 2) return input; // limit input length to terminal width
-                    input += key.KeyChar;
+                    if (char.IsControl(key.KeyChar)) return; // ignore control characters
+                    input.Insert(key.KeyChar);
                 }
-
+        
                 break;
             }
         }
-
-        return input;
     }
     
     void HandleChatInput(string input) {
